@@ -1,0 +1,5 @@
+.env
+*.pyc
+*.iml
+.idea
+.DS_Store

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Line</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/style.css') }}"/>
+</head>
+<body>
+<header class="container">
+    <div class="row text-center">
+        <h1>Edit Line</h1>
+    </div>
+</header>
+
+
+<section class="jumbotron">
+    <div class="container">
+        <div class="row text-center">
+            <form method='POST' action="{{ page }}">
+
+                <input type="hidden" name="id" value="{{ item[0] }}">
+                <p>Id: {{ item[0] }} <input name="new_line" type="text" value="{{ item[1] }}"></p>
+                <input class="other-buttons" type="submit" name="save" value="Save Changes">
+                <input class="other-buttons" type="submit" name="save" value="Delete Line">
+            </form>
+        </div>
+    </div>
+</section>
+</body>
+</html>
