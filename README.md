@@ -9,7 +9,7 @@ The Poem Generator generates poems based on the emotional content of the user in
 Before you get started, read my blog post to understand how the Poem Generator works. Follow the instructions below after coloning the repo to set up the Poem Generator.
 
 ## Prerequisites
-1. A Bluemic account.
+1. A Bluemix account.
 2. A Watson Tone Analyzer Service.
 3. A Watson Language Understanding Service.
 4. A Postgresql service.
