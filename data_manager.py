@@ -9,7 +9,6 @@ class DataManager():
     def __init__(self, understanding_username, understanding_password, analyzer_username, analyzer_password,
                  postgresql_username, postgresql_password, postgresql_host, postgresql_dbname):
 
-
         self.tone_analyzer = ToneAnalyzerV3(version='2016-02-11', username=analyzer_username,
                                             password=analyzer_password)
 
@@ -17,7 +16,9 @@ class DataManager():
                                                                              username=understanding_username,
                                                                              password=understanding_password)
 
-        self.conn_string = "host='{}' dbname='{}' user='{}' password={}".format(postgresql_host, postgresql_dbname, postgresql_username, postgresql_password)
+        self.conn_string = "host='{}' dbname='{}' user='{}' password={}".format(postgresql_host, postgresql_dbname,
+                                                                                postgresql_username,
+                                                                                postgresql_password)
         self.conn = psycopg2.connect(self.conn_string)
         self.cursor = self.conn.cursor()
 
@@ -26,6 +27,7 @@ class DataManager():
             self.cursor.execute("SELECT * from PoemLines")
         except:
             print "No Table Exists. Creating one."
+            self.reset_cursor()
             self.cursor.execute(
                 "CREATE TABLE PoemLines(ID SERIAL, LINE TEXT ,ANGER INT, DISGUST INT, FEAR INT, JOY INT, SADNESS INT, FILLER BOOLEAN)")
 
@@ -46,7 +48,6 @@ class DataManager():
             return self.cursor.fetchone()
         except:
             self.reset_cursor()
-
 
     def update_item(self, val, i):
         try:
@@ -87,15 +88,46 @@ class DataManager():
             print "Tone Analyzer Failed"
             return None
 
-    def replace_words(self, feelings, la_poem):
+    def dom_emotion(self, line):
+        data_store = (line.encode('utf-8'),)
+        scores = []
         try:
-            la_poem = str(la_poem)
+            response = self.tone_analyzer.tone(text=line)
+
+            for tone in response["document_tone"]["tone_categories"][0]["tones"]:
+                scores.append(tone["score"])
+
+            max_score = max(scores)
+            if max_score == 0:
+                print "Tone Analyzer Failed"
+                return data_store + (0,0,0,0,0,'true',)
+            x = scores.index(max_score)
+            for y in range(5):
+                if x == y:
+                    data_store = data_store + (1,)
+                else:
+                    data_store = data_store + (0,)
+            data_store = data_store + ('false',)
+            print data_store
+            return data_store
+        except:
+            print "Tone Analyzer Failed"
+            return None
+
+    def replace_words(self, newpoem, feelings):
+        try:
+            print feelings
+            feelings = str(feelings)
+            newpoem = str(newpoem)
+
+            poem_nla = \
+                self.natural_language_understanding.analyze(text=newpoem,
+                                                            features=[features.Keywords()])
             feelings_nla = \
                 self.natural_language_understanding.analyze(text=feelings,
                                                             features=[features.Keywords()])
-            poem_nla = \
-                self.natural_language_understanding.analyze(text=la_poem,
-                                                            features=[features.Keywords()])
+
+            print "This worked"
             fw = []
             for keyword in feelings_nla["keywords"]:
                 fw.append(keyword['text'].encode('utf-8'))
@@ -105,17 +137,18 @@ class DataManager():
             for keyword in poem_nla["keywords"]:
                 pw.append(keyword['text'].encode('utf-8'))
             print pw
+
             x = randint(0, len(pw) - 1)
             y = randint(0, len(fw) - 1)
-            return feelings.replace(fw[y], pw[x])
+
+            return newpoem.replace(pw[x], fw[y])
         except:
             print "Natural Language Understanding failed."
-            return feelings
-
+            return None
 
     def add_line(self, line):
         try:
-            update_st="INSERT INTO PoemLines (LINE, ANGER, DISGUST, FEAR, JOY, SADNESS, FILLER) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+            update_st = "INSERT INTO PoemLines (LINE, ANGER, DISGUST, FEAR, JOY, SADNESS, FILLER) VALUES (%s, %s, %s, %s, %s, %s, %s)"
             tones = self.calc_tones(line)
             self.cursor.execute(
                 update_st,
@@ -125,23 +158,31 @@ class DataManager():
         except:
             self.reset_cursor()
 
-    def create_poem(self, tones, feelings, wr):
+    def create_poem(self, tones, feelings, wr, se):
         etones = ['ANGER', 'DISGUST', 'FEAR', 'JOY', 'SADNESS']
         selector = "SELECT * FROM PoemLines WHERE"
         needand = False
         for x in range(1, 6):
             if tones[x] == 1:
                 if needand == True:
-                    selector = selector + " AND"
+                    if se:
+                        selector = selector + " AND"
+                    else:
+                        selector = selector + " OR"
                 selector = selector + " {}=1".format(etones[x - 1])
                 needand = True
         print selector
-        self.cursor.execute(selector)
-        data = self.cursor.fetchall()
-        self.cursor.execute("SELECT * FROM PoemLines WHERE FILLER='true'")
-        fillers = self.cursor.fetchall()
+        try:
+            self.cursor.execute(selector)
+            data = self.cursor.fetchall()
+            self.cursor.execute("SELECT * FROM PoemLines WHERE FILLER='true'")
+            fillers = self.cursor.fetchall()
 
-        poem_str = ""
+            poem_str = ""
+        except:
+            self.reset_cursor()
+            return "Sorry. This feature didn't work."
+
         try:
             for x in range(0, 5):
                 if x % 2 == 0 and randint(0, 10) < 2:
@@ -160,4 +201,5 @@ class DataManager():
             else:
                 return poem_str
         except:
-            return ["didnt work"]
+            self.reset_cursor()
+            return None

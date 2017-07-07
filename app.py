@@ -7,6 +7,7 @@ import os
 
 app = Flask(__name__)
 app.secret_key = 'development key'
+port = int(os.getenv('PORT', 8080))
 
 
 @app.route("/", methods=['GET', 'POST'])
@@ -15,13 +16,27 @@ def index():
     if request.method == 'POST':
         if not form.validate():
             return render_template('user.html', form=form)
+
         feelings = form.feelings.data
-        tones = datamanager.calc_tones(feelings)
+        if form.domemotion.data:
+            tones = datamanager.dom_emotion(feelings)
+        else:
+            tones = datamanager.calc_tones(feelings)
+
         if tones[6] == 'true':
             flash("Tell me a little bit more about how you're feeling.")
             return render_template('user.html', form=form)
-        data = datamanager.create_poem(tones, feelings, form.replacewords.data).split('\n')
-        return render_template('user.html', form=form, feelings=data)
+
+        newpoem = datamanager.create_poem(tones, feelings, form.replacewords.data, form.select_or.data)
+
+        if newpoem == None:
+            if form.replacewords.data:
+                flash("Word Replacement didn't work.")
+            if form.select_or.data:
+                flash("Shared Emotions didn't work.")
+            return render_template('user.html', form=form)
+        newpoem = newpoem.split('\n')
+        return render_template('user.html', form=form, feelings=newpoem)
 
     if request.method == 'GET':
         return render_template('user.html', form=form)
@@ -112,7 +127,7 @@ if __name__ == '__main__':
         load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
         datamanager = DataManager(
             os.environ.get('UNDERSTANDING_USERNAME'),
-            os.environ.get('UNDERSTANDING_USERNAME'),
+            os.environ.get('UNDERSTANDING_PASSWORD'),
             os.environ.get('ANALYZER_USERNAME'),
             os.environ.get('ANALYZER_PASSWORD'),
             os.environ.get('POSTGRESQL_USERNAME'),
@@ -120,6 +135,7 @@ if __name__ == '__main__':
             os.environ.get('POSTGRESQL_HOST'),
             os.environ.get('POSTGRESQL_DBNAME'),)
         datamanager.init()
-        app.run(debug=True)
+
+        app.run(host='0.0.0.0', port=port, debug=True)
     except:
         print "Didn't Work"

@@ -13,3 +13,5 @@ class FeelForm(FlaskForm):
     feelings = TextAreaField("How are you feeling?", [validators.Required("Please enter your feelings.")])
     generate = SubmitField("Generate Poem")
     replacewords = BooleanField()
+    domemotion = BooleanField()
+    select_or = BooleanField()
