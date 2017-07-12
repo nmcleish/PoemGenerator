@@ -31,22 +31,10 @@ You will also need a Postgres service.
 
 Copy your credentials to the .env file.
 
-You will need to install the following packages using pip. In the command line, run these commands:
+In the command line, run this commands:
 
 ```
-pip install watson-developer-cloud
-```
- 
-```
-pip install psycopg2
-```
-
-```
-pip install flask
-```
-
-```
-pip install dotenv
+pip install -r requirements.txt
 ```
 
 ### Run Locally  
@@ -54,5 +42,48 @@ You should be able to run the Poem Generator locally now. From the command line,
 ```
 python app.py
 ```
+In your browser, navigate to localhost:8080 or click [here](http://localhost:8080).
 
-Deploy to Bluemix...
+A new table will be created and lines will be imported
+
+## Deploy to Bluemix
+
+Choose your API endpoint
+```
+cf api <API-endpoint>
+```
+
+Replace the *API-endpoint* in the command with an API endpoint from the following list.
+
+|URL                             |Region          |
+|:-------------------------------|:---------------|
+| https://api.ng.bluemix.net     | US South       |
+| https://api.eu-de.bluemix.net  | Germany        |
+| https://api.eu-gb.bluemix.net  | United Kingdom |
+| https://api.au-syd.bluemix.net | Sydney         |
+
+Login to your Bluemix account
+```
+cf login
+```
+
+
+From within the PoemGenerator directory push your app to Bluemix
+
+```
+cf push
+```
+
+This can take a minute. If there is an error in the deployment process you can use the command cf logs <Your-App-Name> --recent to troubleshoot.
+
+Your app should fail.
+
+Go to the app's page on Bluemix. From there, navigate to *something -> Environment Variables*
+
+Add your environment varibles that you put in your *.env* file. Make sure they are correct. 
+
+Go back to your application's homepage and press run.
+
+You should be able to navigate to your application's site and see the Poem Generator.
+
+
