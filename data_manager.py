@@ -7,7 +7,7 @@ import csv
 
 class DataManager():
     def __init__(self, understanding_username, understanding_password, analyzer_username, analyzer_password,
-                 postgresql_username, postgresql_password, postgresql_host, postgresql_dbname):
+                 postgresql_username, postgresql_password, postgresql_host, postgresql_dbname, postgresql_port):
 
         self.tone_analyzer = ToneAnalyzerV3(version='2016-02-11', username=analyzer_username,
                                             password=analyzer_password)
@@ -16,9 +16,9 @@ class DataManager():
                                                                              username=understanding_username,
                                                                              password=understanding_password)
 
-        self.conn_string = "host='{}' dbname='{}' user='{}' password={}".format(postgresql_host, postgresql_dbname,
+        self.conn_string = "host='{}' dbname='{}' user='{}' password={} port={}".format(postgresql_host, postgresql_dbname,
                                                                                 postgresql_username,
-                                                                                postgresql_password)
+                                                                                postgresql_password, postgresql_port)
         self.conn = psycopg2.connect(self.conn_string)
         self.cursor = self.conn.cursor()
 

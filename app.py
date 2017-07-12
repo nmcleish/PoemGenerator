@@ -192,7 +192,8 @@ if __name__ == '__main__':
         os.environ.get('POSTGRESQL_USERNAME'),
         os.environ.get('POSTGRESQL_PASSWORD'),
         os.environ.get('POSTGRESQL_HOST'),
-        os.environ.get('POSTGRESQL_DBNAME'),)
+        os.environ.get('POSTGRESQL_DBNAME'),
+        os.environ.get('POSTGRESQL_PORT'),)
 
     datamanager.init()
 
