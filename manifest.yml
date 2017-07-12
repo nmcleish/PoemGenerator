@@ -4,6 +4,6 @@ applications:
   domain: mybluemix.net
   host: Poem-Generator
   instances: 1
-  name: Poem-Generator
+  name: Poem-Generator-${random-word}
   disk_quota: 1024M
   command: python app.py
