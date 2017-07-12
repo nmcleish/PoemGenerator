@@ -15,3 +15,4 @@ class FeelForm(FlaskForm):
     replacewords = BooleanField()
     domemotion = BooleanField()
     select_or = BooleanField()
+    no_fillers = BooleanField()

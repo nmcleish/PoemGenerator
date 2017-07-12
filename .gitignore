@@ -1,6 +1,5 @@
 .env
 *.pyc
 *.iml
-manifest.yml
 .idea
 .DS_Store

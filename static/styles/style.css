@@ -11,7 +11,24 @@ button, .other-buttons {
     text-decoration: none;
     display: inline-block;
     font-size: 16px;
+    border-radius: 5px;
+}
 
+.custom-file-input {
+    padding-left: 15%;
+
+}
+
+.batch-buttons {
+    background-color: Black; /* Green */
+    border: None;
+    color: white;
+    padding: 5px 15px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    border-radius: 5px;
 }
 
 .btn {
@@ -26,6 +43,11 @@ button, .other-buttons {
 
 .hovering:hover i::before {
     display: block;
+}
+
+.import {
+    margin: auto;
+    text-align: center;
 }
 
 .pagination a {
@@ -106,3 +128,4 @@ input:checked + .slider:before {
 .slider.round:before {
   border-radius: 50%;
 }
+

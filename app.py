@@ -1,13 +1,23 @@
 from math import ceil
 from data_manager import DataManager
-from flask import Flask, render_template, request, flash, redirect, url_for
+from flask import Flask, render_template, request, flash, redirect, url_for, make_response, send_from_directory
 from forms import PoemForm, FeelForm
 from dotenv import load_dotenv
+from werkzeug.utils import secure_filename
 import os
 
 app = Flask(__name__)
 app.secret_key = 'development key'
 port = int(os.getenv('PORT', 8080))
+
+UPLOAD_FOLDER = 'save/'
+ALLOWED_EXTENSIONS = set(['csv'])
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @app.route("/", methods=['GET', 'POST'])
@@ -27,7 +37,7 @@ def index():
             flash("Tell me a little bit more about how you're feeling.")
             return render_template('user.html', form=form)
 
-        newpoem = datamanager.create_poem(tones, feelings, form.replacewords.data, form.select_or.data)
+        newpoem = datamanager.create_poem(tones, feelings, form.replacewords.data, form.select_or.data, form.no_fillers.data)
 
         if newpoem == None:
             if form.replacewords.data:
@@ -58,14 +68,20 @@ def poem():
             return render_template('poem.html', form=form)
         else:
 
-            line = form.line.data.lower().capitalize()
+            line = form.line.data
+            if len(line) < 10:
+                flash("This line is too short.")
+                return render_template('poem.html', form=form)
             tones = datamanager.add_line(line)
+            if tones == None:
+                flash("This line has already been added.")
+                return render_template('poem.html', form=form)
             etones = []
             notes = ""
             if tones[6] == 'false':
                 etones = ['Anger: ', 'Disgust: ', 'Fear: ', 'Joy: ', 'Sadness: ']
                 for x in range(1, 6):
-                    etones[x - 1] = etones[x - 1] + str(tones[x])
+                    etones[x - 1] = etones[x - 1] + str(tones[x]).capitalize()
             else:
                 notes = "Note: This has been marked as a filler."
 
@@ -86,6 +102,9 @@ def data5(page):
     if request.method == 'POST':
         if "submit" in request.form:
             return edit(page)
+    if length == 0:
+        flash("Please add lines to view lines.")
+        return redirect(url_for('admin'))
     prv = page - 1
     nxt = page + 1
     if page == 1:
@@ -121,21 +140,67 @@ def edit():
     item = datamanager.get_item(int(x))
     return render_template('item.html', item=item, len=len(item))
 
+@app.route('/save', methods=['GET', 'POST'])
+def import_export():
+    if request.method == 'POST':
+        if request.form["submit"] == "Export":
+            datamanager.getlines()
+            return render_template("save.html")
+        if 'file' not in request.files:
+            return render_template('batch.html')
+        file = request.files['file']
+        if file.filename == '':
+            flash('Please select a file.')
+        if file and not allowed_file(file.filename):
+            flash('Only .csv files can be imported.')
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            flash(datamanager.fill_db(filename))
+            os.remove("save/" + filename)
+            return redirect(url_for('admin'))
+
+    return render_template('batch.html')
+
+@app.route('/lines.csv', methods=['GET', 'POST'])
+def download():
+    datamanager.getlines()
+    uploads = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'])
+    return send_from_directory(directory=uploads, filename="lines.csv")
+
+@app.route('/clear', methods=['GET', 'POST'])
+def clear():
+    if request.method == 'POST':
+        print "hi"
+        if request.form["submit"] == "Yes":
+            print "bye"
+            datamanager.clear_db()
+            flash("All lines have been removed.")
+            return redirect(url_for('admin'))
+        else:
+            return redirect(url_for('admin'))
+    return render_template('clear.html')
 
 if __name__ == '__main__':
-    try:
-        load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
-        datamanager = DataManager(
-            os.environ.get('UNDERSTANDING_USERNAME'),
-            os.environ.get('UNDERSTANDING_PASSWORD'),
-            os.environ.get('ANALYZER_USERNAME'),
-            os.environ.get('ANALYZER_PASSWORD'),
-            os.environ.get('POSTGRESQL_USERNAME'),
-            os.environ.get('POSTGRESQL_PASSWORD'),
-            os.environ.get('POSTGRESQL_HOST'),
-            os.environ.get('POSTGRESQL_DBNAME'),)
-        datamanager.init()
+    # try:
+    load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+    datamanager = DataManager(
+        os.environ.get('UNDERSTANDING_USERNAME'),
+        os.environ.get('UNDERSTANDING_PASSWORD'),
+        os.environ.get('ANALYZER_USERNAME'),
+        os.environ.get('ANALYZER_PASSWORD'),
+        os.environ.get('POSTGRESQL_USERNAME'),
+        os.environ.get('POSTGRESQL_PASSWORD'),
+        os.environ.get('POSTGRESQL_HOST'),
+        os.environ.get('POSTGRESQL_DBNAME'),)
 
-        app.run(host='0.0.0.0', port=port, debug=True)
-    except:
-        print "Didn't Work"
+    datamanager.init()
+
+    #Store Poem Lines in CSV
+    #datamanager.getlines()
+
+    #Fill Database with lines
+    # datamanager.fill_db()
+    app.run(host='0.0.0.0', port=port, debug=True)
+    # except:
+    #     print "Didn't Work"

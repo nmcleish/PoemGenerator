@@ -31,6 +31,15 @@
                 <font color="red">{{ message }}</font>
                 <br>
                 {% endfor %}
+                {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                {% for message in messages %}
+                <br>
+                <font color="red">{{ message }}</font>
+                <br>
+                {% endfor %}
+                {% endif %}
+                {% endwith %}
                 <br>
                 {{ form.submit(class="other-buttons") }}
                 {{ form.cancel(class="other-buttons") }}

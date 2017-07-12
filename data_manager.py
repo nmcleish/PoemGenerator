@@ -3,7 +3,7 @@ from random import randint
 from watson_developer_cloud import ToneAnalyzerV3, NaturalLanguageClassifierV1, NaturalLanguageUnderstandingV1
 import watson_developer_cloud.natural_language_understanding.features.v1 as \
     features
-
+import csv
 
 class DataManager():
     def __init__(self, understanding_username, understanding_password, analyzer_username, analyzer_password,
@@ -24,12 +24,18 @@ class DataManager():
 
     def init(self):
         try:
+            # self.cursor("ALTER TABLE PoemLines ADD UNIQUE (LINE)")
+            # self.conn.commit()
             self.cursor.execute("SELECT * from PoemLines")
         except:
             print "No Table Exists. Creating one."
             self.reset_cursor()
-            self.cursor.execute(
-                "CREATE TABLE PoemLines(ID SERIAL, LINE TEXT ,ANGER INT, DISGUST INT, FEAR INT, JOY INT, SADNESS INT, FILLER BOOLEAN)")
+            try:
+                self.cursor.execute('CREATE TABLE PoemLines(ID SERIAL, LINE TEXT NOT NULL UNIQUE, ANGER BOOLEAN NOT NULL, DISGUST BOOLEAN NOT NULL, FEAR BOOLEAN NOT NULL, JOY BOOLEAN NOT NULL, SADNESS BOOLEAN NOT NULL, FILLER BOOLEAN NOT NULL);')
+                self.fill_db("init.csv")
+                self.conn.commit()
+            except:
+                self.reset_cursor()
 
     def reset_cursor(self):
         # conn_string = "host='localhost' dbname='nikole.mcleish@ibm.com' user='nikole.mcleish@ibm.com' password=none"
@@ -52,7 +58,6 @@ class DataManager():
     def update_item(self, val, i):
         try:
             newtones = self.calc_tones(val) + (i,)
-            print newtones
             update_st = "UPDATE PoemLines SET LINE=%s, ANGER=%s, DISGUST=%s, FEAR=%s, JOY=%s, SADNESS=%s, FILLER=%s WHERE Id=%s"
             self.cursor.execute(update_st, newtones)
             self.conn.commit()
@@ -72,17 +77,16 @@ class DataManager():
 
             for tone in response["document_tone"]["tone_categories"][0]["tones"]:
                 if round(tone["score"], 1) >= .3:
-                    data_store = data_store + (1,)
+                    data_store = data_store + ('true',)
                     filler = False
                 else:
-                    data_store = data_store + (0,)
+                    data_store = data_store + ('false',)
 
             if filler:
                 data_store = data_store + ('true',)
             else:
                 data_store = data_store + ('false',)
             print data_store
-            # print(json.dumps(response, indent=2))
             return data_store
         except:
             print "Tone Analyzer Failed"
@@ -100,13 +104,13 @@ class DataManager():
             max_score = max(scores)
             if max_score == 0:
                 print "Tone Analyzer Failed"
-                return data_store + (0,0,0,0,0,'true',)
+                return data_store + ('false','false','false','false','false','true',)
             x = scores.index(max_score)
             for y in range(5):
                 if x == y:
-                    data_store = data_store + (1,)
+                    data_store = data_store + ('true',)
                 else:
-                    data_store = data_store + (0,)
+                    data_store = data_store + ('false',)
             data_store = data_store + ('false',)
             print data_store
             return data_store
@@ -150,33 +154,33 @@ class DataManager():
         try:
             update_st = "INSERT INTO PoemLines (LINE, ANGER, DISGUST, FEAR, JOY, SADNESS, FILLER) VALUES (%s, %s, %s, %s, %s, %s, %s)"
             tones = self.calc_tones(line)
-            self.cursor.execute(
-                update_st,
-                tones)
+            self.cursor.execute(update_st, tones)
             self.conn.commit()
             return tones
         except:
             self.reset_cursor()
+            return None
 
-    def create_poem(self, tones, feelings, wr, se):
+    def create_poem(self, tones, feelings, wr, se, nf):
         etones = ['ANGER', 'DISGUST', 'FEAR', 'JOY', 'SADNESS']
         selector = "SELECT * FROM PoemLines WHERE"
         needand = False
         for x in range(1, 6):
-            if tones[x] == 1:
+            if tones[x] == 'true':
                 if needand == True:
                     if se:
                         selector = selector + " AND"
                     else:
                         selector = selector + " OR"
-                selector = selector + " {}=1".format(etones[x - 1])
+                selector = selector + " {}='true".format(etones[x - 1])
                 needand = True
         print selector
         try:
             self.cursor.execute(selector)
             data = self.cursor.fetchall()
-            self.cursor.execute("SELECT * FROM PoemLines WHERE FILLER='true'")
-            fillers = self.cursor.fetchall()
+            if not nf:
+                self.cursor.execute("SELECT * FROM PoemLines WHERE FILLER='true'")
+                fillers = self.cursor.fetchall()
 
             poem_str = ""
         except:
@@ -185,7 +189,7 @@ class DataManager():
 
         try:
             for x in range(0, 5):
-                if x % 2 == 0 and randint(0, 10) < 2:
+                if not nf and x % 2 == 0 and randint(0, 10) < 2:
                     line_num = randint(0, len(fillers) - 1)
                     poem_str = poem_str + fillers[line_num][1]
                     fillers.pop(line_num)
@@ -203,3 +207,42 @@ class DataManager():
         except:
             self.reset_cursor()
             return None
+
+    def getlines(self):
+        filename = 'save/lines.csv'
+        lfile = open(filename, "wb")
+        writer = csv.writer(lfile)
+        self.cursor.execute("SELECT * FROM PoemLines")
+        lines = self.cursor.fetchall()
+        for line in lines:
+            writer.writerow(line[1:8])
+        lfile.close()
+
+    def fill_db(self, filename):
+        lineadded = False
+        lineskipped = False
+        lfile = open("save/" + filename, "rb")
+        reader = csv.reader(lfile)
+        for row in reader:
+            try:
+                update_st = "INSERT INTO PoemLines (LINE, ANGER, DISGUST, FEAR, JOY, SADNESS, FILLER) VALUES (%s, %s, %s, %s, %s, %s, %s)"
+                self.cursor.execute(update_st, row)
+                self.conn.commit()
+                lineadded = True
+            except:
+                lineskipped = True
+                self.reset_cursor()
+        lfile.close()
+        flash = 'Import was successful.'
+        if lineadded and lineskipped:
+            flash = 'Partial Import Successful. Some lines were skipped.'
+        if lineskipped and not lineadded:
+            flash = 'Import was unsuccessful.'
+        return flash
+
+    def clear_db(self):
+        try:
+            self.cursor.execute('DELETE FROM PoemLines')
+            self.conn.commit()
+        except:
+            self.reset_cursor()

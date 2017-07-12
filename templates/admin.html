@@ -19,12 +19,23 @@
 <section class="jumbotron">
     <div class="container">
         <div class="row text-center">
-
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            {% for message in messages %}
+            <font color="red">{{ message }}</font>
+            <br><br>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
             <button onclick="location.href='/poem';" type="submit" name="submit">Add Line</button>
 
             <button onclick="location.href='/data/';" type="submit" name="submit">View Lines</button>
-
+<br><br>
+            <button onclick="location.href='/save';" type="submit" name="submit">Import/Export Lines</button>
+            <br><br>
+            <button onclick="location.href='/clear';" type="submit" name="submit">Clear All Lines</button>
         </div>
+
     </div>
 </section>
 
