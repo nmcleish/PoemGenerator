@@ -37,7 +37,8 @@ def index():
             flash("Tell me a little bit more about how you're feeling.")
             return render_template('user.html', form=form)
 
-        newpoem = datamanager.create_poem(tones, feelings, form.replacewords.data, form.select_or.data, form.no_fillers.data)
+        newpoem = datamanager.create_poem(tones, feelings, form.replacewords.data, form.select_or.data,
+                                          form.no_fillers.data)
 
         if newpoem == None:
             if form.replacewords.data:
@@ -95,10 +96,8 @@ def poem():
 @app.route('/data/', methods=['GET', 'POST'], defaults={'page': 1})
 @app.route('/data/<int:page>', methods=['GET', 'POST'])
 def data5(page):
-    print request.form
     data = datamanager.get_data()
     length = len(data)
-    print length
     if request.method == 'POST':
         if "submit" in request.form:
             return edit(page)
@@ -109,36 +108,28 @@ def data5(page):
     nxt = page + 1
     if page == 1:
         prv = int(ceil(length / 25.0))
-        print "prev caught"
     if ceil(length / 25.0) == page:
         nxt = 1
-        print "end caught"
     data = data[(page - 1) * 25:page * 25]
     return render_template('data.html', data=data, len=len(data), nxt=nxt, prv=prv, page=page)
 
 
 @app.route('/data/edit', methods=['GET', 'POST'])
 def edit():
-    print request.form
     if "save" in request.form:
         if request.form['save'] == "Delete Line":
             datamanager.delete_item(request.form["id"])
-            print 'deleted'
         else:
             i = int(request.form["id"])
-            print i
             item = datamanager.get_item(i)
-            print item
             val = request.form['new_line']
-            print val
-            print "yyyyy"
             if val != str(item[1]):
-                print "Test"
                 datamanager.update_item(val, i)
         return redirect(url_for('data5'))
     x = request.form['submit']
     item = datamanager.get_item(int(x))
     return render_template('item.html', item=item, len=len(item))
+
 
 @app.route('/save', methods=['GET', 'POST'])
 def import_export():
@@ -156,11 +147,12 @@ def import_export():
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            flash(datamanager.fill_db(filename))
+            flash(datamanager.fill_db("save/" + filename))
             os.remove("save/" + filename)
             return redirect(url_for('admin'))
 
     return render_template('batch.html')
+
 
 @app.route('/lines.csv', methods=['GET', 'POST'])
 def download():
@@ -168,18 +160,18 @@ def download():
     uploads = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'])
     return send_from_directory(directory=uploads, filename="lines.csv")
 
+
 @app.route('/clear', methods=['GET', 'POST'])
 def clear():
     if request.method == 'POST':
-        print "hi"
         if request.form["submit"] == "Yes":
-            print "bye"
             datamanager.clear_db()
             flash("All lines have been removed.")
             return redirect(url_for('admin'))
         else:
             return redirect(url_for('admin'))
     return render_template('clear.html')
+
 
 if __name__ == '__main__':
     # try:
@@ -193,15 +185,7 @@ if __name__ == '__main__':
         os.environ.get('POSTGRESQL_PASSWORD'),
         os.environ.get('POSTGRESQL_HOST'),
         os.environ.get('POSTGRESQL_DBNAME'),
-        os.environ.get('POSTGRESQL_PORT'),)
+        os.environ.get('POSTGRESQL_PORT'), )
 
     datamanager.init()
-
-    #Store Poem Lines in CSV
-    #datamanager.getlines()
-
-    #Fill Database with lines
-    # datamanager.fill_db()
     app.run(host='0.0.0.0', port=port, debug=True)
-    # except:
-    #     print "Didn't Work"
