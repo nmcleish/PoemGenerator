@@ -4,10 +4,10 @@ The Poem Generator generates poems based on the emotional content of the user in
 1. Watson Tone Analyzer
 2. Watson Natural Language Understanding
 3. Deploy to Bluemix
-4. Postgresql management
+4. PostgreSQL
 
 ## Getting Started
-Before you get started, read my blog post to understand how the Poem Generator works. Follow the instructions below after coloning the repo to set up the Poem Generator.
+Before you get started, [read my blog post](https://medium.com/@nmcleish/xxx) to learn how the Poem Generator works. to To set up the Poem Generator follow the instructions below after cloning the repo.
 
 ## Prerequisites
 * [Bluemix account](https://console.ng.bluemix.net/registration/)
@@ -18,37 +18,62 @@ Before you get started, read my blog post to understand how the Poem Generator w
 In Bluemix, you will need to create a:
 * Watson Tone Analyzer Service
 * Watson Natural Language Understanding Service
-* Postgresql Service - This can be created with Compose for Postgresql or ElephantSQL
+* Compose for PostgreSQL Service (or use another PostgreSQL service of your choice)
 
 
 ## 1. Clone the sample application
 Clone the repo and navigate to the directory where the sample app is located.
 ```
-git clone https://github.com/nmcleish/poemgenerator
-cd get-started-python
+git clone https://github.com/ibm-watson-data-lab/PoemGenerator
+cd PoemGenerator
 ```
 
 ## 2. Copy your credentials to the .env file
-In the sample app directory, locate the __env.template_ file. Rename the file to _.env_.You will need to copy the credentials from the Bluemix services you created. To find these credentials, navigate to your Bluemix Dashboard and click on a service. Navigate to **“Service credentials”** and click **“View credentials”**. 
+In the sample app directory, locate the __env.template_ file. Rename the file to _.env_. You will need to copy the credentials from the Bluemix services you created. To find these credentials, navigate to your Bluemix Dashboard and click on a service. Navigate to **“Service credentials”** and click **“View credentials”**. 
 
-Copy the credentials to their corresponding variables. Be sure to surround them with quotes.
+Copy the credentials to their corresponding variables.
 
-### Postgres
-You should be able to view your credentials on Bluemix or on a dashboard, depending on which service you created. The Postgres host is also the server. If you have a `:#####` at the end of your host/server, that is your port. Remove that from the end of your host and put the numbers for your port. If you don’t have a port, try using `5432`.
+### PostgreSQL
+For PostgreSQL you will need to provide the username, password, host, port and database name. The default port for PostgreSQL is 5432. If you are using Compose for PostgreSQL your connection string in the Bluemix dashboard will look something like this:
 
-## 3. Install requirements
-In the command line, run this commands:
+`postgres://admin:MYPASSWORD@sl-us-south-1-portal.3.dblayer.com:18887/compose`
+
+This would map to the following properties in the .env file
+```
+POSTGRESQL_USERNAME=admin
+POSTGRESQL_PASSWORD=MYPASSWORD
+POSTGRESQL_HOST=sl-us-south-1-portal.3.dblayer.com
+POSTGRESQL_DBNAME=compose
+POSTGRESQL_PORT=18887
+```
+
+#### Create a Database
+If you are using Compose for PostgreSQL a database called `compose` will have been created for you. If you are using another PostgreSQL provider be sure to create a database and specify the database name in the _.env_ file.
+
+## 3. Set up a Python Virtual Environment (Optional)
+If you prefer to use virtual environments configure one at this step. A virtual environment is a tool to keep the dependencies required by different projects in separate places. You can create and activate a virtual environment by running the following commands:
+```
+pip install virtualenv
+virtualenv venv
+source venv/bin/activate
+```
+
+You can deactivate your virtual environment by running:
+`deactivate`
+
+## 4. Install requirements
+In the command line, run this command:
 ```
 pip install -r requirements.txt
 ```
 
-## 4. Run Locally
+## 5. Run Locally
 You should be able to run the Poem Generator locally now. From the command line, run this command:
 ```
 python app.py
 ```
 
-On your first run, a new table will be created and lines will be imported. This might take a small moment.  In the command prompt, you should see
+On your first run, a new database table will be created and poem lines will be imported into the database. This might take a small moment.  In the command prompt, you should see:
 ```
  * Running on http://0.0.0.0:8080/ (Press CTRL+C to quit)
  * Restarting with stat
@@ -61,7 +86,7 @@ In your browser, you can view your app at http://localhost:8080 or click [here](
 ## 5. Deploy to Bluemix
 To deploy to Bluemix, it can be helpful to set up a manifest.yml file. One is provided for you. Take a moment to review it.
 
-The manifest.yml includes basic information about your app, such as the name, how much memory to allocate for each instance and the route. Since host names must be unique, it will be created with a random work on the end. You can also change the host to  `YourChosenAppName`.
+The manifest.yml includes basic information about your app, such as the name, how much memory to allocate for each instance and the route. Since host names must be unique, it will be created with a random word on the end. You can also change the host to  `YourChosenAppName`.
 
 Choose your API endpoint
 ```
@@ -88,9 +113,9 @@ From within the **PoemGenerator** directory push your app to Bluemix
 cf push
 ```
 
-This can take a minute. If there is an error in the deployment process you can use the command cf logs  --recent to troubleshoot.
+This can take a minute. If there is an error in the deployment process you can use the command `cf logs  --recent` to troubleshoot.
 
-Your .env file will not be pushed to Bluemix, which will cause your app to crash.
+Your .env file will not be pushed to Bluemix, and the very first time your app will crash. This is expected.
 You should see this in the command prompt:
 ```
 0 of 1 instances running, 1 crashed
@@ -103,10 +128,10 @@ On Bluemix, you will need to navigate to your Environment Variables.
 
 **Dashboard -> Poem-Generator -> Runtime -> Environment Variables**
 
-You will be able to add your environment variables that you put in your **.env** file. You won’t need quotes. Make sure they are correct.
+Add each environment variable that is defined in your **.env** file.
 
 Go back to your application's homepage and press run.
 
 You should be able to navigate to your application's site and see the Poem Generator.
 
-**For more information on how the Poem Generator works, you can read my blog post here.**
+**For more information on how the Poem Generator works, you can read my blog post [here](https://medium.com/@nmcleish/xxx).**
