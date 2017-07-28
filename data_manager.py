@@ -1,6 +1,6 @@
 import psycopg2
 from random import randint
-from watson_developer_cloud import ToneAnalyzerV3, NaturalLanguageClassifierV1, NaturalLanguageUnderstandingV1
+from watson_developer_cloud import ToneAnalyzerV3, NaturalLanguageUnderstandingV1
 import watson_developer_cloud.natural_language_understanding.features.v1 as \
     features
 import csv
